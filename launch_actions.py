@@ -254,6 +254,7 @@ async def bundle_stagger_launch(launch_manager, token: Token, num_wallets: int, 
             'symbol': token.symbol,
             'description': token.description,
             'telegram': token.telegram,
+            'twitter': token.twitter,
             'website': token.website,
             'showName': 'true',
         }
@@ -372,6 +373,7 @@ async def bundle_launch(launch_manager, token: Token, num_wallets: int, amounts:
             'symbol': token.symbol,
             'description': token.description,
             'telegram': token.telegram,
+            'twitter': token.twitter,
             'website': token.website,
             'showName': 'true',
         }
@@ -852,6 +854,7 @@ async def sniper_farmer_launch(launch_manager, token_configs: List[Token], liqui
                 'symbol': token_config.symbol,
                 'description': token_config.description,
                 'telegram': token_config.telegram,
+                'twitter': token_config.twitter,
                 'website': token_config.website,
                 'showName': 'true',
             }

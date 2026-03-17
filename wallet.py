@@ -373,12 +373,13 @@ async def _save_wallets(output_folder, main_wallet, sub_wallets):
 
 
 class Token:
-    def __init__(self, name: str, symbol: str, image_path: Optional[str] = None, description: Optional[str] = None, telegram: Optional[str] = None, website: Optional[str] = None):
+    def __init__(self, name: str, symbol: str, image_path: Optional[str] = None, description: Optional[str] = None, telegram: Optional[str] = None, twitter: Optional[str] = None, website: Optional[str] = None):
         self.name: str = name
         self.symbol: str = symbol
         self.image_path: Optional[str] = image_path
         self.description: Optional[str] = description
         self.telegram: Optional[str] = telegram
+        self.twitter: Optional[str] = twitter
         self.website: Optional[str] = website
         self.metadata: Optional[Dict] = None
         self.mint_address: Optional[str] = None
