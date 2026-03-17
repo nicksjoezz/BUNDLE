@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
+from werkzeug.utils import secure_filename
 import asyncio
 import threading
 import logging
@@ -9,7 +10,7 @@ import json
 import time
 from launch_manager import LaunchManager
 from wallet import Token, Wallet
-from launch_actions import bundle_launch, clone_and_snipe, snipe_only, bundle_stagger_launch
+from launch_actions import bundle_launch, clone_and_snipe, snipe_only, bundle_stagger_launch, sniper_farmer_launch
 
 app = Flask(__name__)
 CORS(app)
@@ -21,6 +22,14 @@ logger = logging.getLogger(__name__)
 # Global LaunchManager instance
 launch_manager = None
 loop = asyncio.new_event_loop()
+
+# Vanity State
+vanity_state = {
+    "is_running": False,
+    "found": [],
+    "stop_event": None,
+    "current_match": ""
+}
 
 def run_async_loop(loop):
     asyncio.set_event_loop(loop)
@@ -135,11 +144,85 @@ def export_wallets():
                     "address": w.address,
                     "seed": w.seed_phrase
                 } for w in launch_manager.sub_wallets
-            ]
+            ],
+            "vanity_wallets": vanity_state["found"]
         }
         return jsonify(export_data)
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/wallets/vanity/start', methods=['POST'])
+def start_vanity_generation():
+    data = request.json
+    match_str = data.get('match_str', '').lower()
+    position = data.get('position', 'front') # 'front' or 'back'
+    threads = int(data.get('threads', 4))
+
+    if vanity_state["is_running"]:
+        return jsonify({"status": "error", "message": "Vanity generation already running"}), 400
+
+    vanity_state["is_running"] = True
+    vanity_state["stop_event"] = threading.Event()
+    vanity_state["current_match"] = match_str
+
+    def generate_task():
+        # Create a single loop per thread if needed, or use synchronous method
+        while not vanity_state["stop_event"].is_set():
+            # Synchronous wallet generation
+            from solders.keypair import Keypair
+            import base58
+            from bip_utils import Bip39SeedGenerator, Bip32Slip10Ed25519
+            from mnemonic import Mnemonic
+
+            mnemo = Mnemonic('english')
+            seed_phrase = mnemo.generate()
+            seed_bytes = Bip39SeedGenerator(seed_phrase).Generate()
+            bip32_mst_ctx = Bip32Slip10Ed25519.FromSeed(seed_bytes)
+            bip32_der_ctx = bip32_mst_ctx.DerivePath("m/44'/501'/0'/0'")
+            private_key = bip32_der_ctx.PrivateKey().Raw()
+            kp = Keypair.from_seed(private_key)
+            pub_key_bytes = bip32_der_ctx.PublicKey().RawCompressed().ToBytes()
+            address = base58.b58encode(pub_key_bytes[1:]).decode()
+
+            addr = address.lower()
+            match = False
+            if position == 'front':
+                if addr.startswith(match_str): match = True
+            else:
+                if addr.endswith(match_str): match = True
+
+            if match:
+                vanity_state["found"].append({
+                    "address": address,
+                    "seed": seed_phrase,
+                    "type": "vanity",
+                    "match": match_str
+                })
+                # Auto-save to output
+                if not os.path.exists('output'): os.makedirs('output')
+                with open(f'output/vanity_{match_str}.json', 'w') as f:
+                    json.dump(vanity_state["found"], f, indent=4)
+
+    for _ in range(threads):
+        threading.Thread(target=generate_task, daemon=True).start()
+
+    return jsonify({"status": "started"})
+
+@app.route('/api/wallets/vanity/stop', methods=['POST'])
+def stop_vanity_generation():
+    if vanity_state["stop_event"]:
+        vanity_state["stop_event"].set()
+    vanity_state["is_running"] = False
+    return jsonify({"status": "stopped"})
+
+@app.route('/api/wallets/vanity/status', methods=['GET'])
+def get_vanity_status():
+    return jsonify({
+        "is_running": vanity_state["is_running"],
+        "found_count": len(vanity_state["found"]),
+        "found": vanity_state["found"],
+        "current_match": vanity_state["current_match"]
+    })
 
 @app.route('/api/wallets/balances', methods=['POST'])
 def update_balances():
@@ -147,6 +230,24 @@ def update_balances():
         run_async(launch_manager.main_wallet.update_balance(launch_manager.rpc_client))
         for w in launch_manager.sub_wallets:
             run_async(w.update_balance(launch_manager.rpc_client))
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/wallets/warmup', methods=['POST'])
+def wallet_warmup():
+    try:
+        run_async(launch_manager.wallet_warmup())
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/wallets/burn-dev-supply', methods=['POST'])
+def burn_dev_supply():
+    data = request.json
+    address = data.get('address')
+    try:
+        run_async(launch_manager.burn_dev_supply(address))
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -162,12 +263,45 @@ def sell_delayed():
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/launch/sniper-farmer', methods=['POST'])
-def launch_sniper_farmer():
+def launch_sniper_farmer_api():
     data = request.json
-    # This is complex because it involves multiple tokens.
-    # For now, I'll implement a simplified version or just expose the existing one if possible.
-    # The existing sniper_farmer_launch expects a lot of params.
-    return jsonify({"status": "error", "message": "Not fully implemented in API yet"}), 501
+    token_configs_raw = data.get('tokens', [])
+    liquidity_threshold_usds = data.get('liquidity_threshold_usds', [])
+    dev_buy_amounts = data.get('dev_buy_amounts', [])
+    use_jito = data.get('use_jito', True)
+
+    token_configs = []
+    for t_raw in token_configs_raw:
+        token_configs.append(Token(
+            name=t_raw.get('name'),
+            symbol=t_raw.get('symbol'),
+            description=t_raw.get('description', ''),
+            image_path=t_raw.get('image_path'),
+            telegram=t_raw.get('telegram', ''),
+            twitter=t_raw.get('twitter', ''),
+            website=t_raw.get('website', '')
+        ))
+
+    try:
+        def run_sniper_farmer():
+            run_async(sniper_farmer_launch(launch_manager, token_configs, liquidity_threshold_usds, dev_buy_amounts, use_jito))
+            # Optional: Add to history after each launch or keep as overall process
+            h = load_history()
+            for t in token_configs:
+                h['tokens'].append({
+                    "name": t.name,
+                    "symbol": t.symbol,
+                    "address": t.mint_address,
+                    "type": "sniper-farmer",
+                    "timestamp": time.time()
+                })
+                h['performance']['launches'] += 1
+            save_history(h)
+
+        threading.Thread(target=run_sniper_farmer).start()
+        return jsonify({"status": "initiated"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route('/api/wallets/fund', methods=['POST'])
 def fund_wallets():
@@ -209,7 +343,9 @@ def reclaim_sol():
 def launch_bundle():
     if 'image' in request.files:
         image_file = request.files['image']
-        image_path = os.path.join('images', image_file.filename)
+        filename = secure_filename(image_file.filename)
+        if not os.path.exists('images'): os.makedirs('images')
+        image_path = os.path.join('images', filename)
         image_file.save(image_path)
     else:
         image_path = request.form.get('image_path')

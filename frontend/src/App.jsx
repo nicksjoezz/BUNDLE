@@ -12,11 +12,14 @@ import {
   RefreshCw,
   Send,
   Zap,
-  DollarSign
+  DollarSign,
+  Fingerprint,
+  Flame,
+  Coffee
 } from 'lucide-react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = '/api';
 
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -251,6 +254,56 @@ const MetricCard = ({ label, value }) => (
 
 const Wallets = ({ wallets, addLog }) => {
   const [transferData, setTransferData] = useState(null); // { from_index, address }
+  const [vanityStatus, setVanityStatus] = useState({ is_running: false, found_count: 0, current_match: "" });
+  const [vanityMatch, setVanityMatch] = useState("");
+  const [vanityPos, setVanityPos] = useState("front");
+
+  useEffect(() => {
+    const fetchVanity = async () => {
+      try {
+        const res = await axios.get(`${API_BASE}/wallets/vanity/status`);
+        setVanityStatus(res.data);
+      } catch (e) {}
+    };
+    const interval = setInterval(fetchVanity, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const startVanity = async () => {
+    try {
+      await axios.post(`${API_BASE}/wallets/vanity/start`, {
+        match_str: vanityMatch,
+        position: vanityPos,
+        threads: 4
+      });
+      addLog(`Started vanity generation for '${vanityMatch}'`);
+    } catch (e) { addLog(`[ERROR] Vanity start failed: ${e.message}`); }
+  };
+
+  const stopVanity = async () => {
+    try {
+      await axios.post(`${API_BASE}/wallets/vanity/stop`);
+      addLog("Vanity generation stopped.");
+    } catch (e) { addLog(`[ERROR] Vanity stop failed: ${e.message}`); }
+  };
+
+  const warmup = async () => {
+    try {
+      addLog("Starting wallet warmup protocol...");
+      await axios.post(`${API_BASE}/wallets/warmup`);
+      addLog("Warmup initiated.");
+    } catch (e) { addLog(`[ERROR] Warmup failed: ${e.message}`); }
+  };
+
+  const burnDev = async () => {
+    const addr = prompt("Enter token address to burn from dev wallet:");
+    if (!addr) return;
+    try {
+      addLog(`Burning supply for ${addr}...`);
+      await axios.post(`${API_BASE}/wallets/burn-dev-supply`, { address: addr });
+      addLog("Burn successful.");
+    } catch (e) { addLog(`[ERROR] Burn failed: ${e.message}`); }
+  };
 
   const refreshBalances = async () => {
     try {
@@ -326,6 +379,12 @@ const Wallets = ({ wallets, addLog }) => {
           <button onClick={exportWallets} className="btn-hacker text-xs border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-white">
             EXPORT
           </button>
+          <button onClick={warmup} className="btn-hacker text-xs border-orange-500 text-orange-500 hover:bg-orange-500 hover:text-white flex items-center gap-1">
+            <Coffee size={12} /> WARMUP
+          </button>
+          <button onClick={burnDev} className="btn-hacker text-xs border-purple-500 text-purple-500 hover:bg-purple-500 hover:text-white flex items-center gap-1">
+            <Flame size={12} /> BURN DEV
+          </button>
           <button onClick={fundAll} className="btn-hacker text-xs border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
             FUND ALL
           </button>
@@ -335,7 +394,49 @@ const Wallets = ({ wallets, addLog }) => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2 max-h-[400px] overflow-y-auto pr-2">
+      {/* Vanity Generator Section */}
+      <div className="hacker-border p-4 hacker-bg border-hacker-green bg-opacity-10 mb-2">
+        <h3 className="text-xs font-bold mb-3 flex items-center gap-2"><Fingerprint size={14} /> VANITY_ADDRESS_ENGINE</h3>
+        <div className="flex flex-wrap items-end gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-hacker-muted">MATCH_STRING</label>
+            <input
+              className="input-hacker text-xs w-32"
+              placeholder="e.g. ace"
+              value={vanityMatch}
+              onChange={e => setVanityMatch(e.target.value)}
+              disabled={vanityStatus.is_running}
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <label className="text-[10px] text-hacker-muted">POSITION</label>
+            <select
+              className="input-hacker text-xs bg-black"
+              value={vanityPos}
+              onChange={e => setVanityPos(e.target.value)}
+              disabled={vanityStatus.is_running}
+            >
+              <option value="front">FRONT</option>
+              <option value="back">BACK</option>
+            </select>
+          </div>
+          <div className="flex gap-2">
+            {!vanityStatus.is_running ? (
+              <button onClick={startVanity} className="btn-hacker text-[10px] bg-hacker-green text-black px-4">START_MINING</button>
+            ) : (
+              <button onClick={stopVanity} className="btn-hacker text-[10px] border-red-500 text-red-500 px-4">STOP_MINING</button>
+            )}
+          </div>
+          {vanityStatus.is_running && (
+            <div className="flex flex-col ml-auto text-right">
+              <span className="text-[10px] text-hacker-muted">FOUND_WALLETS</span>
+              <span className="text-sm font-bold animate-pulse text-hacker-green">{vanityStatus.found_count}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto pr-2">
         {wallets.map((w, i) => (
           <div key={i} className="hacker-border p-3 hacker-bg flex justify-between items-center group">
             <div className="flex flex-col">
@@ -407,10 +508,15 @@ const Wallets = ({ wallets, addLog }) => {
 };
 
 const Launch = ({ addLog, maxWallets }) => {
+  const [mode, setMode] = useState('bundle'); // 'bundle' or 'sniper-farmer'
   const [formData, setFormData] = useState({
     name: '', symbol: '', description: '', wallets: Math.min(3, maxWallets), amount: 0.01, devBuy: 0.001,
     telegram: '', twitter: '', website: ''
   });
+
+  // Sniper Farmer State
+  const [sniperTokens, setSniperTokens] = useState([{ name: '', symbol: '', description: '', threshold: 100, devBuy: 0.001 }]);
+
   const [image, setImage] = useState(null);
   const [loading, setLoading] = useState(false);
 
@@ -443,9 +549,46 @@ const Launch = ({ addLog, maxWallets }) => {
     }
   };
 
+  const handleSniperSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      addLog(`Initiating sniper-farmer for ${sniperTokens.length} tokens...`);
+      await axios.post(`${API_BASE}/launch/sniper-farmer`, {
+        tokens: sniperTokens,
+        liquidity_threshold_usds: sniperTokens.map(t => t.threshold),
+        dev_buy_amounts: sniperTokens.map(t => t.devBuy),
+        use_jito: true
+      });
+      addLog("Sniper farmer protocol engaged.");
+    } catch (err) {
+      addLog(`[ERROR] Sniper farmer failed: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Zap size={20} /> TOKEN_FORGE</h2>
+    <div className="max-w-xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold flex items-center gap-2"><Zap size={20} /> TOKEN_FORGE</h2>
+        <div className="flex bg-hacker-muted bg-opacity-20 p-1 rounded">
+           <button
+             onClick={() => setMode('bundle')}
+             className={`px-3 py-1 text-[10px] font-bold transition-all ${mode === 'bundle' ? 'bg-hacker-green text-black' : 'text-hacker-muted'}`}
+           >
+             BUNDLE
+           </button>
+           <button
+             onClick={() => setMode('sniper-farmer')}
+             className={`px-3 py-1 text-[10px] font-bold transition-all ${mode === 'sniper-farmer' ? 'bg-hacker-green text-black' : 'text-hacker-muted'}`}
+           >
+             SNIPER_FARMER
+           </button>
+        </div>
+      </div>
+
+      {mode === 'bundle' ? (
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
@@ -509,6 +652,66 @@ const Launch = ({ addLog, maxWallets }) => {
           {loading ? 'INITIALIZING...' : 'INITIALIZE BUNDLE LAUNCH'}
         </button>
       </form>
+      ) : (
+      <form onSubmit={handleSniperSubmit} className="flex flex-col gap-4">
+         <div className="max-h-[400px] overflow-y-auto pr-2 space-y-6">
+           {sniperTokens.map((t, i) => (
+             <div key={i} className="hacker-border p-4 hacker-bg border-hacker-muted">
+                <div className="flex justify-between mb-2">
+                  <span className="text-[10px] text-hacker-green font-bold">TOKEN_{i+1}</span>
+                  {sniperTokens.length > 1 && (
+                    <button type="button" onClick={() => setSniperTokens(sniperTokens.filter((_, idx) => idx !== i))} className="text-red-500 text-[10px]">REMOVE</button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-hacker-muted">NAME</label>
+                    <input className="input-hacker text-xs" value={t.name} onChange={e => {
+                      const newT = [...sniperTokens]; newT[i].name = e.target.value; setSniperTokens(newT);
+                    }} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-hacker-muted">SYMBOL</label>
+                    <input className="input-hacker text-xs" value={t.symbol} onChange={e => {
+                      const newT = [...sniperTokens]; newT[i].symbol = e.target.value; setSniperTokens(newT);
+                    }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-hacker-muted">THRESHOLD (USD)</label>
+                    <input type="number" className="input-hacker text-xs" value={t.threshold} onChange={e => {
+                      const newT = [...sniperTokens]; newT[i].threshold = parseFloat(e.target.value); setSniperTokens(newT);
+                    }} />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[10px] text-hacker-muted">DEV BUY (SOL)</label>
+                    <input type="number" step="0.001" className="input-hacker text-xs" value={t.devBuy} onChange={e => {
+                      const newT = [...sniperTokens]; newT[i].devBuy = parseFloat(e.target.value); setSniperTokens(newT);
+                    }} />
+                  </div>
+                </div>
+             </div>
+           ))}
+         </div>
+         <div className="flex gap-2">
+           <button
+             type="button"
+             onClick={() => setSniperTokens([...sniperTokens, { name: '', symbol: '', description: '', threshold: 100, devBuy: 0.001 }])}
+             className="btn-hacker flex-grow text-[10px] border-hacker-muted"
+           >
+             + ADD TOKEN CONFIG
+           </button>
+           <button
+             type="submit"
+             disabled={loading}
+             className="btn-hacker flex-grow bg-hacker-green text-black font-bold tracking-widest"
+           >
+             {loading ? 'DEPLOYING...' : 'DEPLOY SNIPER ARRAY'}
+           </button>
+         </div>
+      </form>
+      )}
     </div>
   );
 };
