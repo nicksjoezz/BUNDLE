@@ -55,7 +55,7 @@ const App = () => {
       case 'dashboard': return <Dashboard history={history} status={status} />;
       case 'history': return <TokenHistory history={history} />;
       case 'wallets': return <Wallets wallets={wallets} addLog={addLog} />;
-      case 'launch': return <Launch addLog={addLog} />;
+      case 'launch': return <Launch addLog={addLog} maxWallets={status?.sub_wallets_count || 0} />;
       case 'sell': return <Sell wallets={wallets} addLog={addLog} />;
       case 'settings': return <Config addLog={addLog} />;
       default: return null;
@@ -285,6 +285,33 @@ const Wallets = ({ wallets, addLog }) => {
     }
   };
 
+  const generateWallets = async () => {
+    const num = prompt("How many sub-wallets would you like to generate?", "20");
+    if (!num) return;
+    try {
+      addLog(`Generating ${num} sub-wallets and saving to output...`);
+      await axios.post(`${API_BASE}/wallets/generate`, { num: parseInt(num) });
+      addLog("Generation complete.");
+    } catch (err) {
+      addLog(`[ERROR] Generation failed: ${err.message}`);
+    }
+  };
+
+  const exportWallets = async () => {
+    try {
+      const res = await axios.get(`${API_BASE}/wallets/export`);
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'wallets.json';
+      a.click();
+      addLog("Wallet registry exported.");
+    } catch (err) {
+      addLog(`[ERROR] Export failed: ${err.message}`);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -292,6 +319,12 @@ const Wallets = ({ wallets, addLog }) => {
         <div className="flex gap-2">
           <button onClick={refreshBalances} className="btn-hacker text-xs flex items-center gap-1">
             <RefreshCw size={12} /> REFRESH
+          </button>
+          <button onClick={generateWallets} className="btn-hacker text-xs border-green-500 text-green-500 hover:bg-green-500 hover:text-white">
+            GENERATE
+          </button>
+          <button onClick={exportWallets} className="btn-hacker text-xs border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-white">
+            EXPORT
           </button>
           <button onClick={fundAll} className="btn-hacker text-xs border-blue-500 text-blue-500 hover:bg-blue-500 hover:text-white">
             FUND ALL
@@ -373,9 +406,9 @@ const Wallets = ({ wallets, addLog }) => {
   );
 };
 
-const Launch = ({ addLog }) => {
+const Launch = ({ addLog, maxWallets }) => {
   const [formData, setFormData] = useState({
-    name: '', symbol: '', description: '', wallets: 3, amount: 0.01, devBuy: 0.001,
+    name: '', symbol: '', description: '', wallets: Math.min(3, maxWallets), amount: 0.01, devBuy: 0.001,
     telegram: '', twitter: '', website: ''
   });
   const [image, setImage] = useState(null);
@@ -448,8 +481,15 @@ const Launch = ({ addLog }) => {
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-xs text-hacker-muted">WALLETS</label>
-            <input type="number" className="input-hacker" value={formData.wallets} onChange={e => setFormData({...formData, wallets: e.target.value})} />
+            <label className="text-xs text-hacker-muted">WALLETS (MAX {maxWallets})</label>
+            <input
+              type="number"
+              max={maxWallets}
+              min="1"
+              className="input-hacker"
+              value={formData.wallets}
+              onChange={e => setFormData({...formData, wallets: Math.min(e.target.value, maxWallets)})}
+            />
           </div>
           <div className="flex flex-col gap-1">
             <label className="text-xs text-hacker-muted">BUY AMT</label>

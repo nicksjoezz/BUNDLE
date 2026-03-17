@@ -111,6 +111,36 @@ def get_wallets():
         })
     return jsonify(wallets)
 
+@app.route('/api/wallets/generate', methods=['POST'])
+def generate_new_wallets():
+    data = request.json
+    num = int(data.get('num', 20))
+    try:
+        launch_manager.num_sub_wallets = num
+        run_async(launch_manager.generate_wallets())
+        return jsonify({"status": "success", "count": len(launch_manager.sub_wallets)})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/wallets/export', methods=['GET'])
+def export_wallets():
+    try:
+        export_data = {
+            "main_wallet": {
+                "address": launch_manager.main_wallet.address,
+                "seed": launch_manager.main_wallet.seed_phrase
+            },
+            "sub_wallets": [
+                {
+                    "address": w.address,
+                    "seed": w.seed_phrase
+                } for w in launch_manager.sub_wallets
+            ]
+        }
+        return jsonify(export_data)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
 @app.route('/api/wallets/balances', methods=['POST'])
 def update_balances():
     try:
