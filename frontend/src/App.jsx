@@ -450,12 +450,27 @@ const Wallets = ({ wallets, addLog }) => {
                    <div className="text-[10px] text-hacker-muted">{Object.keys(w.token_balances).length} TOKENS</div>
                 )}
               </div>
-              <button
-                onClick={() => setTransferData({ from_index: w.type === 'main' ? 0 : (w.index || i), address: w.address })}
-                className="opacity-0 group-hover:opacity-100 btn-hacker p-1 text-[10px]"
-              >
-                TX
-              </button>
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => setTransferData({ from_index: w.type === 'main' ? 0 : (w.index || i), address: w.address })}
+                  className="opacity-0 group-hover:opacity-100 btn-hacker p-1 text-[8px] uppercase"
+                >
+                  TX SOL
+                </button>
+                <button
+                  onClick={async () => {
+                    const perc = prompt("Percentage to sell (1-100):", "100");
+                    if (!perc) return;
+                    try {
+                      await axios.post(`${API_BASE}/sell/single`, { address: w.address, percentage: parseFloat(perc) });
+                      addLog(`Single sell initiated for ${w.address}`);
+                    } catch (e) { addLog(`[ERROR] Sell failed: ${e.message}`); }
+                  }}
+                  className="opacity-0 group-hover:opacity-100 btn-hacker p-1 text-[8px] uppercase border-red-500 text-red-500"
+                >
+                  SELL
+                </button>
+              </div>
             </div>
           </div>
         ))}
@@ -570,26 +585,48 @@ const Launch = ({ addLog, maxWallets }) => {
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2"><Zap size={20} /> TOKEN_FORGE</h2>
-        <div className="flex bg-hacker-muted bg-opacity-20 p-1 rounded">
-           <button
-             onClick={() => setMode('bundle')}
-             className={`px-3 py-1 text-[10px] font-bold transition-all ${mode === 'bundle' ? 'bg-hacker-green text-black' : 'text-hacker-muted'}`}
-           >
-             BUNDLE
-           </button>
-           <button
-             onClick={() => setMode('sniper-farmer')}
-             className={`px-3 py-1 text-[10px] font-bold transition-all ${mode === 'sniper-farmer' ? 'bg-hacker-green text-black' : 'text-hacker-muted'}`}
-           >
-             SNIPER_FARMER
-           </button>
+        <div className="flex flex-wrap bg-hacker-muted bg-opacity-20 p-1 rounded gap-1">
+           {['bundle', 'clone-snipe', 'snipe-only', 'bundle-stagger', 'sniper-farmer'].map(m => (
+             <button
+               key={m}
+               onClick={() => setMode(m)}
+               className={`px-2 py-1 text-[9px] font-bold transition-all uppercase ${mode === m ? 'bg-hacker-green text-black' : 'text-hacker-muted hover:text-white'}`}
+             >
+               {m.replace('-', '_')}
+             </button>
+           ))}
         </div>
       </div>
 
-      {mode === 'bundle' ? (
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {mode === 'bundle' || mode === 'bundle-stagger' ? (
+      <form onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            const data = new FormData();
+            data.append('name', formData.name);
+            data.append('symbol', formData.symbol);
+            data.append('description', formData.description);
+            data.append('telegram', formData.telegram);
+            data.append('twitter', formData.twitter);
+            data.append('website', formData.website);
+            data.append('num_wallets', formData.wallets);
+            data.append('amount', formData.amount);
+            data.append('dev_buy_amount', formData.devBuy);
+            if (image) data.append('image', image);
+
+            if (mode === 'bundle-stagger') {
+              data.append('delay', prompt("Enter stagger delay (sec):", "1.0"));
+              await axios.post(`${API_BASE}/launch/bundle-stagger`, data);
+            } else {
+              await axios.post(`${API_BASE}/launch/bundle`, data);
+            }
+            addLog(`Initiated ${mode} for ${formData.symbol}`);
+          } catch (err) { addLog(`[ERROR] ${mode} failed: ${err.message}`); }
+          finally { setLoading(false); }
+      }} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-hacker-muted">NAME</label>
@@ -649,9 +686,85 @@ const Launch = ({ addLog, maxWallets }) => {
           className="btn-hacker mt-4 font-bold tracking-widest flex justify-center items-center gap-2"
         >
           {loading ? <RefreshCw className="animate-spin" size={18} /> : <Rocket size={18} />}
-          {loading ? 'INITIALIZING...' : 'INITIALIZE BUNDLE LAUNCH'}
+          {loading ? 'INITIALIZING...' : `INITIALIZE ${mode.toUpperCase().replace('-', ' ')}`}
         </button>
       </form>
+      ) : mode === 'clone-snipe' ? (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            const target = prompt("Enter existing token address to clone:");
+            if (!target) return;
+            await axios.post(`${API_BASE}/launch/clone-snipe`, {
+              token: { name: formData.name, symbol: formData.symbol },
+              num_wallets: formData.wallets,
+              amounts: Array(parseInt(formData.wallets)).fill(parseFloat(formData.amount)),
+              existing_address: target,
+              dev_buy_amount: formData.devBuy
+            });
+            addLog(`Initiated clone+snipe from ${target}`);
+          } catch (err) { addLog(`[ERROR] Clone+Snipe failed: ${err.message}`); }
+          finally { setLoading(false); }
+        }} className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">DUMMY NAME</label>
+              <input className="input-hacker" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">DUMMY SYMBOL</label>
+              <input className="input-hacker" value={formData.symbol} onChange={e => setFormData({...formData, symbol: e.target.value})} />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">WALLETS</label>
+              <input type="number" className="input-hacker" value={formData.wallets} onChange={e => setFormData({...formData, wallets: e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">BUY AMT</label>
+              <input type="number" step="0.01" className="input-hacker" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">DEV BUY</label>
+              <input type="number" step="0.001" className="input-hacker" value={formData.devBuy} onChange={e => setFormData({...formData, devBuy: e.target.value})} />
+            </div>
+          </div>
+          <button type="submit" disabled={loading} className="btn-hacker mt-4 font-bold tracking-widest uppercase">
+             {loading ? 'CLONING...' : 'INITIALIZE CLONE + SNIPE'}
+          </button>
+        </form>
+      ) : mode === 'snipe-only' ? (
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          setLoading(true);
+          try {
+            const addr = prompt("Enter token address to snipe:");
+            if (!addr) return;
+            await axios.post(`${API_BASE}/launch/snipe-only`, {
+              mint_address: addr,
+              num_wallets: formData.wallets,
+              amounts: Array(parseInt(formData.wallets)).fill(parseFloat(formData.amount))
+            });
+            addLog(`Snipe protocol engaged for ${addr}`);
+          } catch (err) { addLog(`[ERROR] Snipe failed: ${err.message}`); }
+          finally { setLoading(false); }
+        }} className="flex flex-col gap-4">
+           <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">WALLETS</label>
+              <input type="number" className="input-hacker" value={formData.wallets} onChange={e => setFormData({...formData, wallets: e.target.value})} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className="text-xs text-hacker-muted">BUY AMT</label>
+              <input type="number" step="0.01" className="input-hacker" value={formData.amount} onChange={e => setFormData({...formData, amount: e.target.value})} />
+            </div>
+          </div>
+          <button type="submit" disabled={loading} className="btn-hacker mt-4 font-bold tracking-widest">
+             {loading ? 'SNIPING...' : 'EXECUTE SNIPE ONLY'}
+          </button>
+        </form>
       ) : (
       <form onSubmit={handleSniperSubmit} className="flex flex-col gap-4">
          <div className="max-h-[400px] overflow-y-auto pr-2 space-y-6">
@@ -785,8 +898,23 @@ const Sell = ({ wallets, addLog }) => {
                <span className="font-bold">DEV DUMP ALL</span>
                <span className="text-[10px] opacity-50">Transfer to main then sell</span>
              </button>
+             <button
+                onClick={async () => {
+                  const to = prompt("Enter target wallet address for transfer+sell:");
+                  if (!to) return;
+                  try {
+                    addLog(`Executing transfer+sell to ${to}...`);
+                    await axios.post(`${API_BASE}/sell/transfer-sell`, { to_wallet_address: to });
+                    addLog("Transfer+sell protocol complete.");
+                  } catch (e) { addLog(`[ERROR] Transfer+Sell failed: ${e.message}`); }
+                }}
+                className="btn-hacker py-4 border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-black flex flex-col items-center gap-1"
+             >
+                <span className="font-bold">TRANSFER SELL</span>
+                <span className="text-[10px] opacity-50">Aggregate and sell from target</span>
+             </button>
              <div className="text-[10px] text-hacker-muted italic text-center">
-               Warning: This will aggregate all token balances to the primary dev wallet before execution.
+               Warning: This will aggregate all token balances before execution.
              </div>
            </div>
         </div>

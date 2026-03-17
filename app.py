@@ -391,14 +391,65 @@ def launch_clone_snipe():
     data = request.json
     token_data = data.get('token')
     token = Token(name=token_data.get('name'), symbol=token_data.get('symbol'))
-    num_wallets = data.get('num_wallets')
-    amounts = data.get('amounts')
+    num_wallets = int(data.get('num_wallets'))
+    amounts = [float(a) for a in data.get('amounts', [])]
     use_jito = data.get('use_jito', True)
     existing_address = data.get('existing_address')
-    dev_buy_amount = data.get('dev_buy_amount', 0.001)
+    dev_buy_amount = float(data.get('dev_buy_amount', 0.001))
 
     try:
         threading.Thread(target=lambda: run_async(clone_and_snipe(launch_manager, token, num_wallets, amounts, use_jito, existing_address, dev_buy_amount))).start()
+        return jsonify({"status": "initiated"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/launch/snipe-only', methods=['POST'])
+def launch_snipe_only():
+    data = request.json
+    token_address = data.get('mint_address')
+    token = Token(name="Snipe", symbol="SNIPE")
+    token.mint_address = token_address
+    num_wallets = int(data.get('num_wallets'))
+    amounts = [float(a) for a in data.get('amounts', [])]
+    use_jito = data.get('use_jito', True)
+
+    try:
+        threading.Thread(target=lambda: run_async(snipe_only(launch_manager, token, num_wallets, amounts, use_jito))).start()
+        return jsonify({"status": "initiated"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/launch/bundle-stagger', methods=['POST'])
+def launch_bundle_stagger():
+    # Similar to bundle but with delay
+    if 'image' in request.files:
+        image_file = request.files['image']
+        filename = secure_filename(image_file.filename)
+        if not os.path.exists('images'): os.makedirs('images')
+        image_path = os.path.join('images', filename)
+        image_file.save(image_path)
+    else:
+        image_path = request.form.get('image_path')
+
+    token = Token(
+        name=request.form.get('name'),
+        symbol=request.form.get('symbol'),
+        description=request.form.get('description', ''),
+        telegram=request.form.get('telegram', ''),
+        twitter=request.form.get('twitter', ''),
+        website=request.form.get('website', ''),
+        image_path=image_path
+    )
+    num_wallets = int(request.form.get('num_wallets', 3))
+    amount = float(request.form.get('amount', 0.01))
+    amounts = [amount] * num_wallets
+    dev_buy_amount = float(request.form.get('dev_buy_amount', 0.001))
+    delay = float(request.form.get('delay', 1.0))
+    clone_existing = request.form.get('clone_existing', 'false').lower() == 'true'
+    clone_address = request.form.get('clone_address')
+
+    try:
+        threading.Thread(target=lambda: run_async(bundle_stagger_launch(launch_manager, token, num_wallets, amounts, {'delay': delay}, clone_existing, clone_address, dev_buy_amount))).start()
         return jsonify({"status": "initiated"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -409,6 +460,16 @@ def sell_dump_all():
     percentage = data.get('percentage', 100)
     try:
         run_async(launch_manager.dump_all(percentage))
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/api/sell/transfer-sell', methods=['POST'])
+def sell_transfer():
+    data = request.json
+    to_wallet_address = data.get('to_wallet_address')
+    try:
+        run_async(launch_manager.transfer_sell(to_wallet_address))
         return jsonify({"status": "success"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
