@@ -106,9 +106,8 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], funder_keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[funder_keypair])
-            transaction_obj.sign([funder_keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([funder_keypair], recent_blockhash=recent_blockhash)
 
             signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f'Wallet {self.address} funded with {sol_amount} SOL via Helius, txid: {signature}')
@@ -165,11 +164,10 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], self.keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-        signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(
                 f'Sent {transferable_lamports / 1_000_000_000} SOL from wallet {self.address} to {to_wallet_address}. txid: {signature}')
         except Exception as e:
@@ -219,11 +217,10 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], self.keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-        signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f"SOL reclaimed from wallet {self.address} to {to_wallet_address} via Helius, txid: {signature}")
         except Exception as e:
             logging.error(f"Error reclaiming SOL from wallet {self.address}: {e}")
@@ -257,10 +254,10 @@ class Wallet:
                 )
             )
             message = Message([transfer_instruction], recent_blockhash=recent_blockhash)
-            transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair]) # Corrected: recent_blockhash in constructor
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # Corrected: recent_blockhash in sign
+            transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-        signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f"Sent tokens from wallet {self.address} to dev wallet {to_wallet_address}")
         except Exception as e:
             logging.error(f"Error transferring tokens: {e}")

@@ -165,16 +165,14 @@ def start_vanity_generation():
     vanity_state["stop_event"] = threading.Event()
     vanity_state["current_match"] = match_str
 
-    def generate_task():
-        # Create a single loop per thread if needed, or use synchronous method
-        while not vanity_state["stop_event"].is_set():
-            # Synchronous wallet generation
-            from solders.keypair import Keypair
-            import base58
-            from bip_utils import Bip39SeedGenerator, Bip32Slip10Ed25519
-            from mnemonic import Mnemonic
+    from solders.keypair import Keypair
+    import base58
+    from bip_utils import Bip39SeedGenerator, Bip32Slip10Ed25519
+    from mnemonic import Mnemonic
 
-            mnemo = Mnemonic('english')
+    def generate_task():
+        mnemo = Mnemonic('english')
+        while not vanity_state["stop_event"].is_set():
             seed_phrase = mnemo.generate()
             seed_bytes = Bip39SeedGenerator(seed_phrase).Generate()
             bip32_mst_ctx = Bip32Slip10Ed25519.FromSeed(seed_bytes)
@@ -526,5 +524,8 @@ def serve(path):
     else:
         return send_from_directory('frontend/dist', 'index.html')
 
-if __name__ == '__main__':
+def run_app():
     app.run(host='0.0.0.0', port=5000)
+
+if __name__ == '__main__':
+    run_app()
