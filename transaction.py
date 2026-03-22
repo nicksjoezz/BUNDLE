@@ -21,7 +21,6 @@ import asyncio
 import httpx
 import base64
 from spl.token.constants import TOKEN_PROGRAM_ID
-from spl.token.instructions import get_associated_token_address
 
 async def send_helius_transaction(helius_api_key: str, tx: Union[VersionedTransaction, Transaction]) -> str:
     """Sends a VersionedTransaction or Transaction to the Helius API, auto-detecting type."""
@@ -199,7 +198,7 @@ async def transfer_spl_token(sender_keypair: Keypair, recipient_address: str, to
     """Transfers SPL tokens using the available spl-token library and Helius for landing."""
     try:
         from spl.token.constants import TOKEN_PROGRAM_ID
-        from spl.token.instructions import transfer, TransferParams
+        from spl.token.instructions import transfer, TransferParams, get_associated_token_address
 
         sender_pubkey = sender_keypair.pubkey()
         recipient_pubkey = Pubkey.from_string(recipient_address)
