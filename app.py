@@ -10,7 +10,7 @@ import json
 import time
 from launch_manager import LaunchManager
 from wallet import Token, Wallet
-from launch_actions import bundle_launch, clone_and_snipe, snipe_only, bundle_stagger_launch, sniper_farmer_launch
+from launch_actions import bundle_launch, clone_and_snipe, snipe_only, bundle_stagger_launch, sniper_farmer_launch, volume_bot_loop
 
 app = Flask(__name__)
 CORS(app)
@@ -22,6 +22,30 @@ logger = logging.getLogger(__name__)
 # Global LaunchManager instance
 launch_manager = None
 loop = asyncio.new_event_loop()
+
+# Task Tracking State
+active_tasks = []
+
+def add_task(name, type, status="running"):
+    task_id = str(int(time.time() * 1000))
+    task = {
+        "id": task_id,
+        "name": name,
+        "type": type,
+        "status": status,
+        "timestamp": time.time()
+    }
+    active_tasks.append(task)
+    return task_id
+
+def update_task(task_id, status):
+    for t in active_tasks:
+        if t["id"] == task_id:
+            t["status"] = status
+            break
+
+# Volume Bot State
+volume_bot_tasks = {} # mint_address -> stop_event
 
 # Vanity State
 vanity_state = {
@@ -364,20 +388,26 @@ def launch_bundle():
     dev_buy_amount = float(request.form.get('dev_buy_amount', 0.001))
 
     try:
+        task_id = add_task(f"Launch {token.symbol}", "bundle")
         # Run in background to avoid timeout
         def run_launch():
-            run_async(bundle_launch(launch_manager, token, num_wallets, amounts, use_jito, dev_buy_amount))
-            # Save to history
-            h = load_history()
-            h['tokens'].append({
-                "name": token.name,
-                "symbol": token.symbol,
-                "address": token.mint_address,
-                "type": "bundle",
-                "timestamp": time.time()
-            })
-            h['performance']['launches'] += 1
-            save_history(h)
+            try:
+                run_async(bundle_launch(launch_manager, token, num_wallets, amounts, use_jito, dev_buy_amount))
+                # Save to history
+                h = load_history()
+                h['tokens'].append({
+                    "name": token.name,
+                    "symbol": token.symbol,
+                    "address": token.mint_address,
+                    "type": "bundle",
+                    "timestamp": time.time()
+                })
+                h['performance']['launches'] += 1
+                save_history(h)
+                update_task(task_id, "success")
+            except Exception as e:
+                update_task(task_id, "error")
+                logger.error(f"Launch failed: {e}")
 
         threading.Thread(target=run_launch).start()
         return jsonify({"status": "initiated"})
@@ -496,8 +526,46 @@ def get_status():
     return jsonify({
         "initialized": launch_manager is not None,
         "main_wallet": launch_manager.main_wallet.address if launch_manager else None,
-        "sub_wallets_count": len(launch_manager.sub_wallets) if launch_manager else 0
+        "sub_wallets_count": len(launch_manager.sub_wallets) if launch_manager else 0,
+        "volume_bots_active": list(volume_bot_tasks.keys())
     })
+
+@app.route('/api/volume/start', methods=['POST'])
+def start_volume_bot():
+    data = request.json
+    mint = data.get('mint_address')
+    duration = int(data.get('duration', 60))
+    min_buy = float(data.get('min_buy', 0.01))
+    max_buy = float(data.get('max_buy', 0.1))
+
+    if mint in volume_bot_tasks:
+        return jsonify({"status": "error", "message": "Volume bot already running for this token"}), 400
+
+    stop_event = asyncio.Event()
+    volume_bot_tasks[mint] = stop_event
+
+    task_id = add_task(f"Volume Bot: {mint[:8]}...", "volume")
+
+    def run_volume():
+        try:
+            run_async(volume_bot_loop(launch_manager, mint, duration, min_buy, max_buy, (2, 10), stop_event))
+            update_task(task_id, "success")
+        except Exception as e:
+            update_task(task_id, "error")
+        finally:
+            if mint in volume_bot_tasks: del volume_bot_tasks[mint]
+
+    threading.Thread(target=run_volume).start()
+    return jsonify({"status": "started"})
+
+@app.route('/api/volume/stop', methods=['POST'])
+def stop_volume_bot():
+    data = request.json
+    mint = data.get('mint_address')
+    if mint in volume_bot_tasks:
+        loop.call_soon_threadsafe(volume_bot_tasks[mint].set)
+        return jsonify({"status": "stopped"})
+    return jsonify({"status": "error", "message": "No volume bot found for this token"}), 404
 
 # Tracking for Dashboard
 HISTORY_FILE = 'history.json'
@@ -515,6 +583,10 @@ def save_history(history):
 @app.route('/api/history', methods=['GET'])
 def get_history():
     return jsonify(load_history())
+
+@app.route('/api/tasks', methods=['GET'])
+def get_tasks():
+    return jsonify(active_tasks)
 
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')

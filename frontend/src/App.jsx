@@ -26,6 +26,7 @@ const App = () => {
   const [status, setStatus] = useState(null);
   const [history, setHistory] = useState({ tokens: [], performance: { total_profit: 0, launches: 0 } });
   const [wallets, setWallets] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState(["[SYSTEM] Initializing hacking module...", "[SYSTEM] Connection established."]);
 
   const addLog = (msg) => {
@@ -35,14 +36,16 @@ const App = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statusRes, historyRes, walletRes] = await Promise.all([
+        const [statusRes, historyRes, walletRes, tasksRes] = await Promise.all([
           axios.get(`${API_BASE}/status`),
           axios.get(`${API_BASE}/history`),
-          axios.get(`${API_BASE}/wallets`)
+          axios.get(`${API_BASE}/wallets`),
+          axios.get(`${API_BASE}/tasks`)
         ]);
         setStatus(statusRes.data);
         setHistory(historyRes.data);
         setWallets(walletRes.data);
+        setTasks(tasksRes.data);
       } catch (err) {
         addLog(`[ERROR] Failed to fetch data: ${err.message}`);
       }
@@ -55,8 +58,9 @@ const App = () => {
 
   const renderTab = () => {
     switch(activeTab) {
-      case 'dashboard': return <Dashboard history={history} status={status} />;
+      case 'dashboard': return <Dashboard history={history} status={status} tasks={tasks} />;
       case 'history': return <TokenHistory history={history} />;
+      case 'operations': return <Operations status={status} addLog={addLog} />;
       case 'wallets': return <Wallets wallets={wallets} addLog={addLog} />;
       case 'launch': return <Launch addLog={addLog} maxWallets={status?.sub_wallets_count || 0} />;
       case 'sell': return <Sell wallets={wallets} addLog={addLog} />;
@@ -108,6 +112,7 @@ const App = () => {
         <nav className="hacker-border p-2 md:p-4 hacker-bg flex md:flex-col gap-1 md:gap-2 overflow-x-auto md:overflow-x-visible no-scrollbar">
           <NavButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={<TrendingUp />} label="DB" fullLabel="DASHBOARD" />
           <NavButton active={activeTab === 'history'} onClick={() => setActiveTab('history')} icon={<Database />} label="HT" fullLabel="HISTORY" />
+          <NavButton active={activeTab === 'operations'} onClick={() => setActiveTab('operations')} icon={<Zap />} label="OP" fullLabel="OPERATIONS" />
           <NavButton active={activeTab === 'wallets'} onClick={() => setActiveTab('wallets')} icon={<Wallet />} label="WL" fullLabel="WALLETS" />
           <NavButton active={activeTab === 'launch'} onClick={() => setActiveTab('launch')} icon={<Rocket />} label="LN" fullLabel="LAUNCH" />
           <NavButton active={activeTab === 'sell'} onClick={() => setActiveTab('sell')} icon={<DollarSign />} label="SL" fullLabel="SELL" />
@@ -171,6 +176,79 @@ const NavButton = ({ active, onClick, icon, label, fullLabel }) => (
   </button>
 );
 
+const Operations = ({ status, addLog }) => {
+  const [volumeData, setVolumeData] = useState({ mint_address: '', duration: 60, min_buy: 0.01, max_buy: 0.1 });
+
+  const startVolume = async () => {
+    try {
+      addLog(`Starting volume bot for ${volumeData.mint_address}...`);
+      await axios.post(`${API_BASE}/volume/start`, volumeData);
+      addLog("Volume protocol initiated.");
+    } catch (e) { addLog(`[ERROR] Volume start failed: ${e.message}`); }
+  };
+
+  const stopVolume = async (mint) => {
+    try {
+      await axios.post(`${API_BASE}/volume/stop`, { mint_address: mint });
+      addLog(`Stopped volume bot for ${mint}`);
+    } catch (e) { addLog(`[ERROR] Volume stop failed: ${e.message}`); }
+  };
+
+  return (
+    <div className="flex flex-col gap-6">
+       <h2 className="text-xl font-bold flex items-center gap-2"><Zap size={20} /> OPERATIONS_CENTER</h2>
+       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="hacker-border p-4 hacker-bg">
+             <h3 className="text-sm font-bold mb-4 text-hacker-green">MARKET_MAKER_VOLUME_BOT</h3>
+             <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                   <label className="text-[10px] text-hacker-muted uppercase">TOKEN_MINT_ADDRESS</label>
+                   <input className="input-hacker text-xs" value={volumeData.mint_address} onChange={e => setVolumeData({...volumeData, mint_address: e.target.value})} placeholder="Pubkey..." />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="flex flex-col gap-1">
+                      <label className="text-[10px] text-hacker-muted uppercase">DURATION_MINS</label>
+                      <input type="number" className="input-hacker text-xs" value={volumeData.duration} onChange={e => setVolumeData({...volumeData, duration: parseInt(e.target.value)})} />
+                   </div>
+                   <div className="flex flex-col gap-1">
+                      <label className="text-[10px] text-hacker-muted uppercase">DELAY</label>
+                      <div className="text-[10px] py-2 opacity-50 italic">Dynamic (2-10s)</div>
+                   </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                   <div className="flex flex-col gap-1">
+                      <label className="text-[10px] text-hacker-muted uppercase">MIN_BUY_SOL</label>
+                      <input type="number" step="0.01" className="input-hacker text-xs" value={volumeData.min_buy} onChange={e => setVolumeData({...volumeData, min_buy: parseFloat(e.target.value)})} />
+                   </div>
+                   <div className="flex flex-col gap-1">
+                      <label className="text-[10px] text-hacker-muted uppercase">MAX_BUY_SOL</label>
+                      <input type="number" step="0.01" className="input-hacker text-xs" value={volumeData.max_buy} onChange={e => setVolumeData({...volumeData, max_buy: parseFloat(e.target.value)})} />
+                   </div>
+                </div>
+                <button onClick={startVolume} className="btn-hacker mt-2 bg-hacker-green text-black font-bold">START_VOLUME_BOT</button>
+             </div>
+          </div>
+
+          <div className="hacker-border p-4 hacker-bg border-hacker-muted">
+             <h3 className="text-sm font-bold mb-4">ACTIVE_VOLUME_NODES</h3>
+             <div className="space-y-2">
+                {status?.volume_bots_active?.length === 0 ? (
+                  <div className="text-xs text-hacker-muted italic">No active volume bots detected.</div>
+                ) : (
+                  status?.volume_bots_active?.map((mint, i) => (
+                    <div key={i} className="flex justify-between items-center bg-hacker-muted bg-opacity-20 p-2 border-l-2 border-hacker-green">
+                       <span className="text-[10px] font-mono break-all max-w-[150px]">{mint}</span>
+                       <button onClick={() => stopVolume(mint)} className="text-red-500 text-[10px] border border-red-500 px-2 py-1 hover:bg-red-500 hover:text-white transition-colors">STOP</button>
+                    </div>
+                  ))
+                )}
+             </div>
+          </div>
+       </div>
+    </div>
+  );
+};
+
 const TokenHistory = ({ history }) => (
   <div className="flex flex-col gap-4">
     <h2 className="text-xl font-bold flex items-center gap-2"><Database size={20} /> TOKEN_REGISTRY</h2>
@@ -205,43 +283,105 @@ const TokenHistory = ({ history }) => (
   </div>
 );
 
-const Dashboard = ({ history, status }) => (
-  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-    <div className="p-4 border border-hacker-muted relative overflow-hidden group">
-      <motion.div
-        className="absolute top-0 right-0 p-1 opacity-10"
-        animate={{ rotate: 360 }}
-        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-      >
-        <Cpu size={40} />
-      </motion.div>
-      <h3 className="text-hacker-muted mb-4 flex items-center gap-2">
-        <Cpu size={14} /> SYSTEM METRICS
-      </h3>
-      <div className="grid grid-cols-2 gap-4">
-        <MetricCard label="TOTAL LAUNCHES" value={history.performance.launches} />
-        <MetricCard label="SUB WALLETS" value={status?.sub_wallets_count || 0} />
-        <MetricCard label="TOTAL PROFIT" value={`${history.performance.total_profit} SOL`} />
-        <MetricCard label="ACTIVE TASKS" value="0" />
+const Dashboard = ({ history, status, tasks }) => (
+  <div className="flex flex-col gap-6">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Capability Overview */}
+      <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+         <CapabilityCard
+           title="ATOMIC BUNDLING"
+           desc="Atomic Jito-bundles for 20+ wallet buys in the same block."
+           icon={<Zap className="text-hacker-green" />}
+         />
+         <CapabilityCard
+           title="VOLUME GENERATION"
+           desc="Market Maker bots to generate organic-looking chart volume."
+           icon={<TrendingUp className="text-hacker-green" />}
+         />
+         <CapabilityCard
+           title="SNIPER FARMING"
+           desc="Automated multi-token monitoring and liquidity-based exits."
+           icon={<Shield className="text-hacker-green" />}
+         />
+         <CapabilityCard
+           title="STEALTH EXITS"
+           desc="Aggregate and liquidate via clean targets to hide dev footprints."
+           icon={<DollarSign className="text-hacker-green" />}
+         />
+      </div>
+
+      {/* Stats */}
+      <div className="p-4 border border-hacker-muted relative overflow-hidden group hacker-bg">
+        <h3 className="text-hacker-muted mb-4 flex items-center gap-2">
+          <Cpu size={14} /> CORE_METRICS
+        </h3>
+        <div className="grid grid-cols-1 gap-4">
+          <MetricCard label="CUMULATIVE LAUNCHES" value={history.performance.launches} />
+          <MetricCard label="MANAGED FLEET" value={`${status?.sub_wallets_count || 0} WALLETS`} />
+          <MetricCard label="NET REALIZED PROFIT" value={`${history.performance.total_profit} SOL`} />
+          <MetricCard label="NODES RUNNING" value={tasks.filter(t => t.status === "running").length} />
+        </div>
       </div>
     </div>
-    <div className="p-4 border border-hacker-muted">
-      <h3 className="text-hacker-muted mb-4 flex items-center gap-2">
-        <Database size={14} /> RECENT LAUNCHES
-      </h3>
-      <div className="space-y-2 max-h-40 overflow-y-auto">
-        {history.tokens.length === 0 ? (
-          <div className="text-hacker-muted text-sm italic">No tokens launched yet...</div>
-        ) : (
-          history.tokens.map((t, i) => (
-            <div key={i} className="flex justify-between text-xs p-2 bg-hacker-muted bg-opacity-20 border-l-2 border-hacker-green">
-              <span>{t.name} ({t.symbol})</span>
-              <span className="opacity-50">{new Date(t.timestamp * 1000).toLocaleDateString()}</span>
-            </div>
-          ))
-        )}
+
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="p-4 border border-hacker-muted">
+        <h3 className="text-hacker-muted mb-4 flex items-center gap-2">
+          <Database size={14} /> RECENT LAUNCHES
+        </h3>
+        <div className="space-y-2 max-h-40 overflow-y-auto">
+          {history.tokens.length === 0 ? (
+            <div className="text-hacker-muted text-sm italic">No tokens launched yet...</div>
+          ) : (
+            history.tokens.map((t, i) => (
+              <div key={i} className="flex justify-between text-xs p-2 bg-hacker-muted bg-opacity-20 border-l-2 border-hacker-green">
+                <span>{t.name} ({t.symbol})</span>
+                <span className="opacity-50">{new Date(t.timestamp * 1000).toLocaleDateString()}</span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+      <div className="p-4 border border-hacker-muted relative">
+         <h3 className="text-hacker-muted mb-4 flex items-center gap-2">
+          <RefreshCw size={14} /> ACTIVE_TASK_MONITOR
+        </h3>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {tasks.length === 0 ? (
+            <div className="text-hacker-muted text-sm italic">No active tasks being monitored.</div>
+          ) : (
+            tasks.slice().reverse().map((t, i) => (
+              <div key={i} className="flex justify-between items-center text-xs p-3 bg-hacker-muted bg-opacity-10 border border-hacker-muted border-l-4 border-l-hacker-green">
+                <div className="flex items-center gap-4">
+                  <span className="font-bold uppercase text-hacker-green tracking-tighter">{t.type}</span>
+                  <span className="opacity-80">{t.name}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                   <span className={`px-2 py-0.5 rounded-full text-[8px] font-bold ${
+                     t.status === 'running' ? 'bg-blue-900 text-blue-200 animate-pulse' :
+                     t.status === 'success' ? 'bg-green-900 text-green-200' :
+                     'bg-red-900 text-red-200'
+                   }`}>
+                     {t.status.toUpperCase()}
+                   </span>
+                   <span className="text-hacker-muted opacity-50">{new Date(t.timestamp * 1000).toLocaleTimeString()}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
+  </div>
+);
+
+const CapabilityCard = ({ title, desc, icon }) => (
+  <div className="hacker-border p-4 hacker-bg border-hacker-muted hover:border-hacker-green transition-colors group">
+    <div className="flex items-center gap-3 mb-2">
+      {icon}
+      <h4 className="text-xs font-bold tracking-widest">{title}</h4>
+    </div>
+    <p className="text-[10px] text-hacker-muted leading-relaxed">{desc}</p>
   </div>
 );
 

@@ -393,3 +393,60 @@ async def sniper_farmer_launch(launch_manager, token_configs: List[Token], liqui
     except Exception as e:
         logging.error(f"Sniper Farmer failed: {e}")
         raise
+
+async def volume_bot_loop(launch_manager, mint_address: str, duration_minutes: int, min_buy: float, max_buy: float, delay_range: Tuple[float, float], stop_event: asyncio.Event):
+    """Generates trading volume by rotating buys and sells across sub-wallets."""
+    logging.info(f"Volume bot started for {mint_address} for {duration_minutes} minutes")
+    start_time = time.time()
+    end_time = start_time + (duration_minutes * 60)
+
+    while time.time() < end_time and not stop_event.is_set():
+        try:
+            # Pick a random sub-wallet
+            wallet = random.choice(launch_manager.sub_wallets)
+            await wallet.update_balance(launch_manager.rpc_client)
+
+            # Check if we should buy or sell
+            token_balance = wallet.token_balances.get(mint_address, 0)
+
+            if token_balance > 0 and random.random() > 0.4: # 60% chance to sell if holding
+                # Sell a random portion
+                sell_percent = random.uniform(0.5, 1.0)
+                amount_to_sell = token_balance * sell_percent
+                tx_data = {
+                    "publicKey": str(wallet.keypair.pubkey()),
+                    "action": "sell",
+                    "mint": mint_address,
+                    "amount": amount_to_sell,
+                    "denominatedInSol": "false",
+                    "slippage": launch_manager.default_slippage,
+                    "priorityFee": launch_manager.default_priority_fee,
+                }
+                tx = await create_and_sign_local_tx(tx_data, wallet.keypair)
+                sig = await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                logging.info(f"Volume Bot [SELL]: {sig}")
+            else:
+                # Buy a random amount
+                buy_amount = random.uniform(min_buy, max_buy)
+                if wallet.balance > (buy_amount + 0.01):
+                    tx_data = {
+                        "publicKey": str(wallet.keypair.pubkey()),
+                        "action": "buy",
+                        "mint": mint_address,
+                        "amount": buy_amount,
+                        "denominatedInSol": "true",
+                        "slippage": launch_manager.default_slippage,
+                        "priorityFee": launch_manager.default_priority_fee,
+                    }
+                    tx = await create_and_sign_local_tx(tx_data, wallet.keypair)
+                    sig = await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                    logging.info(f"Volume Bot [BUY]: {sig}")
+
+            # Sleep for random interval
+            await asyncio.sleep(random.uniform(*delay_range))
+
+        except Exception as e:
+            logging.error(f"Volume bot error: {e}")
+            await asyncio.sleep(5)
+
+    logging.info(f"Volume bot finished for {mint_address}")
