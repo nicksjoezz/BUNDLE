@@ -24,7 +24,7 @@ const API_BASE = '/api';
 const App = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [status, setStatus] = useState(null);
-  const [history, setHistory] = useState({ tokens: [], performance: { total_profit: 0, launches: 0 } });
+  const [history, setHistory] = useState({ tokens: [], performance: { total_profit: 0, launches: 0 }, signatures: [] });
   const [wallets, setWallets] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState(["[SYSTEM] Initializing hacking module...", "[SYSTEM] Connection established."]);
@@ -59,10 +59,10 @@ const App = () => {
   const renderTab = () => {
     switch(activeTab) {
       case 'dashboard': return <Dashboard history={history} status={status} tasks={tasks} />;
-      case 'history': return <TokenHistory history={history} />;
+      case 'history': return <History history={history} />;
       case 'operations': return <Operations status={status} addLog={addLog} />;
       case 'wallets': return <Wallets wallets={wallets} addLog={addLog} />;
-      case 'launch': return <Launch addLog={addLog} maxWallets={status?.sub_wallets_count || 0} />;
+      case 'launch': return <Launch addLog={addLog} wallets={wallets} maxWallets={status?.sub_wallets_count || 0} />;
       case 'sell': return <Sell wallets={wallets} addLog={addLog} />;
       case 'settings': return <Config addLog={addLog} />;
       default: return null;
@@ -147,7 +147,13 @@ const App = () => {
           </div>
 
           {/* Console */}
-          <div className="hacker-border h-40 hacker-bg p-2 text-xs font-mono overflow-y-auto flex flex-col-reverse">
+          <div className="hacker-border h-40 hacker-bg p-2 text-xs font-mono overflow-y-auto flex flex-col-reverse relative group/terminal">
+            <button
+              onClick={() => setLogs([])}
+              className="absolute top-2 right-2 opacity-0 group-hover/terminal:opacity-100 transition-opacity text-[8px] border border-hacker-muted px-1 hover:bg-hacker-muted"
+            >
+              CLEAR_LOGS
+            </button>
             {logs.map((log, i) => (
               <div key={i} className={log.includes('ERROR') ? 'text-red-500' : 'text-hacker-green opacity-80'}>
                 {log}
@@ -249,36 +255,64 @@ const Operations = ({ status, addLog }) => {
   );
 };
 
-const TokenHistory = ({ history }) => (
-  <div className="flex flex-col gap-4">
-    <h2 className="text-xl font-bold flex items-center gap-2"><Database size={20} /> TOKEN_REGISTRY</h2>
-    <div className="hacker-border hacker-bg overflow-x-auto">
-      <table className="w-full text-left text-xs">
-        <thead className="border-b border-hacker-muted bg-hacker-muted bg-opacity-30">
-          <tr>
-            <th className="p-3">NAME</th>
-            <th className="p-3">SYMBOL</th>
-            <th className="p-3">ADDRESS</th>
-            <th className="p-3">TYPE</th>
-            <th className="p-3 text-right">TIMESTAMP</th>
-          </tr>
-        </thead>
-        <tbody>
-          {history.tokens.length === 0 ? (
-            <tr><td colSpan="5" className="p-8 text-center text-hacker-muted italic">No tokens found in database.</td></tr>
-          ) : (
-            history.tokens.map((t, i) => (
-              <tr key={i} className="border-b border-hacker-muted hover:bg-hacker-muted hover:bg-opacity-10">
-                <td className="p-3">{t.name}</td>
-                <td className="p-3">{t.symbol}</td>
-                <td className="p-3 font-mono opacity-70 break-all">{t.address}</td>
-                <td className="p-3 capitalize">{t.type}</td>
-                <td className="p-3 text-right opacity-50">{new Date(t.timestamp * 1000).toLocaleString()}</td>
-              </tr>
+const History = ({ history }) => (
+  <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-4">
+      <h2 className="text-xl font-bold flex items-center gap-2"><Database size={20} /> TOKEN_REGISTRY</h2>
+      <div className="hacker-border hacker-bg overflow-x-auto">
+        <table className="w-full text-left text-xs">
+          <thead className="border-b border-hacker-muted bg-hacker-muted bg-opacity-30">
+            <tr>
+              <th className="p-3">NAME</th>
+              <th className="p-3">SYMBOL</th>
+              <th className="p-3">ADDRESS</th>
+              <th className="p-3">TYPE</th>
+              <th className="p-3 text-right">TIMESTAMP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {history.tokens.length === 0 ? (
+              <tr><td colSpan="5" className="p-8 text-center text-hacker-muted italic">No tokens found in database.</td></tr>
+            ) : (
+              history.tokens.map((t, i) => (
+                <tr key={i} className="border-b border-hacker-muted hover:bg-hacker-muted hover:bg-opacity-10">
+                  <td className="p-3">{t.name}</td>
+                  <td className="p-3">{t.symbol}</td>
+                  <td className="p-3 font-mono opacity-70 break-all">{t.address}</td>
+                  <td className="p-3 capitalize">{t.type}</td>
+                  <td className="p-3 text-right opacity-50">{new Date(t.timestamp * 1000).toLocaleString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div className="flex flex-col gap-4">
+      <h2 className="text-xl font-bold flex items-center gap-2"><Fingerprint size={20} /> RECENT_SIGNATURES</h2>
+      <div className="hacker-border hacker-bg max-h-60 overflow-y-auto">
+         {history.signatures.length === 0 ? (
+            <div className="p-8 text-center text-hacker-muted italic text-xs">No transaction signatures logged.</div>
+         ) : (
+            history.signatures.map((s, i) => (
+               <div key={i} className="p-3 border-b border-hacker-muted flex justify-between items-center group hover:bg-hacker-green hover:bg-opacity-5">
+                  <div className="flex flex-col gap-1">
+                     <span className="text-hacker-green font-bold text-[10px] uppercase tracking-tighter">{s.desc}</span>
+                     <a
+                       href={`https://solscan.io/tx/${s.sig}`}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="text-[10px] font-mono opacity-60 group-hover:opacity-100 hover:underline"
+                     >
+                        {s.sig}
+                     </a>
+                  </div>
+                  <span className="text-[10px] text-hacker-muted">{new Date(s.time * 1000).toLocaleTimeString()}</span>
+               </div>
             ))
-          )}
-        </tbody>
-      </table>
+         )}
+      </div>
     </div>
   </div>
 );
@@ -662,25 +696,22 @@ const Wallets = ({ wallets, addLog }) => {
   );
 };
 
-const Launch = ({ addLog, maxWallets }) => {
-  const [mode, setMode] = useState('bundle'); // 'bundle' or 'sniper-farmer'
+const Launch = ({ addLog, wallets, maxWallets }) => {
+  const [mode, setMode] = useState('bundle');
   const [formData, setFormData] = useState({
     name: '', symbol: '', description: '', wallets: Math.min(3, maxWallets), amount: 0.01, devBuy: 0.001,
     telegram: '', twitter: '', website: ''
   });
 
-  // Sniper Farmer State
   const [sniperTokens, setSniperTokens] = useState([{ name: '', symbol: '', description: '', threshold: 100, devBuy: 0.001 }]);
-
   const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      addLog(`Initiating bundle launch for ${formData.name}...`);
-
       const data = new FormData();
       data.append('name', formData.name);
       data.append('symbol', formData.symbol);
@@ -693,15 +724,15 @@ const Launch = ({ addLog, maxWallets }) => {
       data.append('dev_buy_amount', formData.devBuy);
       if (image) data.append('image', image);
 
-      await axios.post(`${API_BASE}/launch/bundle`, data, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
-      addLog(`Launch request sent for ${formData.symbol}`);
-    } catch (err) {
-      addLog(`[ERROR] Launch failed: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+      if (mode === 'bundle-stagger') {
+        data.append('delay', prompt("Enter stagger delay (sec):", "1.0"));
+        await axios.post(`${API_BASE}/launch/bundle-stagger`, data);
+      } else {
+        await axios.post(`${API_BASE}/launch/bundle`, data);
+      }
+      addLog(`Initiated ${mode} for ${formData.symbol}`);
+    } catch (err) { addLog(`[ERROR] ${mode} failed: ${err.message}`); }
+    finally { setLoading(false); }
   };
 
   const handleSniperSubmit = async (e) => {
@@ -724,7 +755,7 @@ const Launch = ({ addLog, maxWallets }) => {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
+    <div className="max-w-xl mx-auto pb-10">
       <div className="flex flex-wrap justify-between items-center gap-4 mb-6">
         <h2 className="text-xl font-bold flex items-center gap-2"><Zap size={20} /> TOKEN_FORGE</h2>
         <div className="flex flex-wrap bg-hacker-muted bg-opacity-20 p-1 rounded gap-1">
@@ -741,32 +772,7 @@ const Launch = ({ addLog, maxWallets }) => {
       </div>
 
       {mode === 'bundle' || mode === 'bundle-stagger' ? (
-      <form onSubmit={async (e) => {
-          e.preventDefault();
-          setLoading(true);
-          try {
-            const data = new FormData();
-            data.append('name', formData.name);
-            data.append('symbol', formData.symbol);
-            data.append('description', formData.description);
-            data.append('telegram', formData.telegram);
-            data.append('twitter', formData.twitter);
-            data.append('website', formData.website);
-            data.append('num_wallets', formData.wallets);
-            data.append('amount', formData.amount);
-            data.append('dev_buy_amount', formData.devBuy);
-            if (image) data.append('image', image);
-
-            if (mode === 'bundle-stagger') {
-              data.append('delay', prompt("Enter stagger delay (sec):", "1.0"));
-              await axios.post(`${API_BASE}/launch/bundle-stagger`, data);
-            } else {
-              await axios.post(`${API_BASE}/launch/bundle`, data);
-            }
-            addLog(`Initiated ${mode} for ${formData.symbol}`);
-          } catch (err) { addLog(`[ERROR] ${mode} failed: ${err.message}`); }
-          finally { setLoading(false); }
-      }} className="flex flex-col gap-4">
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label className="text-xs text-hacker-muted">NAME</label>
@@ -795,9 +801,23 @@ const Launch = ({ addLog, maxWallets }) => {
             <input className="input-hacker text-xs" value={formData.website} onChange={e => setFormData({...formData, website: e.target.value})} placeholder="https://..." />
           </div>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="text-xs text-hacker-muted">TOKEN IMAGE</label>
-          <input type="file" className="input-hacker text-xs" onChange={e => setImage(e.target.files[0])} accept="image/*" />
+        <div className="flex flex-col gap-2">
+          <label className="text-xs text-hacker-muted uppercase font-bold">TOKEN_IMAGE_ASSET</label>
+          <div className="flex items-center gap-4">
+            <div className="h-16 w-16 hacker-border flex items-center justify-center bg-black overflow-hidden relative">
+               {imagePreview ? <img src={imagePreview} className="w-full h-full object-cover" /> : <Rocket className="opacity-20" />}
+            </div>
+            <input
+              type="file"
+              className="input-hacker text-[10px] flex-grow"
+              onChange={e => {
+                const file = e.target.files[0];
+                setImage(file);
+                if (file) setImagePreview(URL.createObjectURL(file));
+              }}
+              accept="image/*"
+            />
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
           <div className="flex flex-col gap-1">
@@ -965,6 +985,22 @@ const Launch = ({ addLog, maxWallets }) => {
          </div>
       </form>
       )}
+
+      {/* Mini Fleet Status */}
+      <div className="mt-8 border-t border-hacker-muted pt-4">
+        <h3 className="text-[10px] font-bold text-hacker-muted mb-3 flex items-center gap-2">
+          <Wallet size={12} /> LIVE_FLEET_SYNC
+        </h3>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+           {wallets.slice(0, 8).map((w, i) => (
+             <div key={i} className="p-2 hacker-border bg-hacker-muted bg-opacity-5 flex flex-col">
+                <span className="text-[8px] text-hacker-muted truncate">{w.address.slice(0,4)}...{w.address.slice(-4)}</span>
+                <span className="text-[10px] font-bold text-hacker-green">{w.balance.toFixed(3)} SOL</span>
+             </div>
+           ))}
+           {wallets.length > 8 && <div className="p-2 hacker-border flex items-center justify-center text-[8px] text-hacker-muted">+{wallets.length - 8} MORE</div>}
+        </div>
+      </div>
     </div>
   );
 };
@@ -1034,9 +1070,9 @@ const Sell = ({ wallets, addLog }) => {
         <div className="p-6 border border-hacker-muted bg-hacker-muted bg-opacity-5">
            <h3 className="text-lg font-bold mb-4">STRATEGIC_LIQUIDATION</h3>
            <div className="flex flex-col gap-4">
-             <button onClick={devDump} className="btn-hacker py-4 flex flex-col items-center gap-1">
-               <span className="font-bold">DEV DUMP ALL</span>
-               <span className="text-[10px] opacity-50">Transfer to main then sell</span>
+             <button onClick={devDump} className="btn-hacker py-4 flex flex-col items-center gap-1 border-purple-500 text-purple-500 hover:bg-purple-600 hover:text-white hover:shadow-[0_0_15px_rgba(147,51,234,0.5)] transition-all">
+               <span className="font-bold uppercase flex items-center gap-2"><Flame size={14} className="animate-pulse" /> DEV DUMP ALL</span>
+               <span className="text-[10px] opacity-50">Transfer fleet supply to dev then sell</span>
              </button>
              <button
                 onClick={async () => {
@@ -1048,13 +1084,13 @@ const Sell = ({ wallets, addLog }) => {
                     addLog("Transfer+sell protocol complete.");
                   } catch (e) { addLog(`[ERROR] Transfer+Sell failed: ${e.message}`); }
                 }}
-                className="btn-hacker py-4 border-cyan-500 text-cyan-500 hover:bg-cyan-500 hover:text-black flex flex-col items-center gap-1"
+                className="btn-hacker py-4 border-cyan-500 text-cyan-500 hover:bg-cyan-600 hover:text-white hover:shadow-[0_0_15px_rgba(6,182,212,0.5)] transition-all flex flex-col items-center gap-1"
              >
-                <span className="font-bold">TRANSFER SELL</span>
-                <span className="text-[10px] opacity-50">Aggregate and sell from target</span>
+                <span className="font-bold uppercase flex items-center gap-2"><Send size={14} /> TRANSFER SELL</span>
+                <span className="text-[10px] opacity-50">Aggregate and sell from clean target</span>
              </button>
-             <div className="text-[10px] text-hacker-muted italic text-center">
-               Warning: This will aggregate all token balances before execution.
+             <div className="text-[10px] text-hacker-muted italic text-center border-t border-hacker-muted pt-2 mt-2">
+               Caution: Aggregation transactions are traceable on-chain.
              </div>
            </div>
         </div>

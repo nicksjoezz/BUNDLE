@@ -1,59 +1,49 @@
-2026-03-22 09:32:37,757 - root - INFO - Created wallet with address: HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk from mnemonic
-2026-03-22 09:32:37,876 - root - INFO - Launch Manager Initialized, main wallet address: HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk
-2026-03-22 09:32:37,882 - root - INFO - Created wallet with address: 4WdHZSNs8TGNY2Y35Qp7Gb5QKHKr6xaJoSEkgt3cJr9w generated
-2026-03-22 09:32:37,882 - root - INFO - Sub-wallet 1 created, address: 4WdHZSNs8TGNY2Y35Qp7Gb5QKHKr6xaJoSEkgt3cJr9w
-2026-03-22 09:32:37,885 - root - INFO - Created wallet with address: 3xqFz55SHQVGY1GjbUd9X88T6dU1zv6aejhZhYDhUDwV generated
-2026-03-22 09:32:37,885 - root - INFO - Sub-wallet 2 created, address: 3xqFz55SHQVGY1GjbUd9X88T6dU1zv6aejhZhYDhUDwV
-2026-03-22 09:32:37,888 - root - INFO - Created wallet with address: HEd6GrXsG844hfy2XxZkntFsMdbhspnrKzSPtMpf6PkH generated
-2026-03-22 09:32:37,888 - root - INFO - Sub-wallet 3 created, address: HEd6GrXsG844hfy2XxZkntFsMdbhspnrKzSPtMpf6PkH
-2026-03-22 09:32:37,891 - root - INFO - Created wallet with address: AmoR7NSaEt1NBpRixJ2mxDewwcAviAH26DQcSLE4Sapb generated
-2026-03-22 09:32:37,892 - root - INFO - Sub-wallet 4 created, address: AmoR7NSaEt1NBpRixJ2mxDewwcAviAH26DQcSLE4Sapb
-2026-03-22 09:32:37,895 - root - INFO - Created wallet with address: 9XwcS7uQks4Xn18fF7zqxy8dLAD6uXMwdqsXiLQdh9C2 generated
-2026-03-22 09:32:37,895 - root - INFO - Sub-wallet 5 created, address: 9XwcS7uQks4Xn18fF7zqxy8dLAD6uXMwdqsXiLQdh9C2
-2026-03-22 09:32:37,898 - root - INFO - Created wallet with address: 56zFcApxTVyUNXgwsbTUsyGKMHHP4nuUiJwe2pBHRvac generated
-2026-03-22 09:32:37,899 - root - INFO - Sub-wallet 6 created, address: 56zFcApxTVyUNXgwsbTUsyGKMHHP4nuUiJwe2pBHRvac
-2026-03-22 09:32:37,902 - root - INFO - Created wallet with address: 3wciHPDSiivqNABzv8b7ejeiapHnPCuYjLx5mRaYqHFu generated
-2026-03-22 09:32:37,902 - root - INFO - Sub-wallet 7 created, address: 3wciHPDSiivqNABzv8b7ejeiapHnPCuYjLx5mRaYqHFu
-2026-03-22 09:32:37,905 - root - INFO - Created wallet with address: 7YeF5YZsoFnywDDAdJUkTkrhETn5WNEeWN47jKkGuoM3 generated
-2026-03-22 09:32:37,905 - root - INFO - Sub-wallet 8 created, address: 7YeF5YZsoFnywDDAdJUkTkrhETn5WNEeWN47jKkGuoM3
-2026-03-22 09:32:37,908 - root - INFO - Created wallet with address: 4qTgQ1bFsr3ujrpY6Kj1W12u5orisU6D5yp4QperMNku generated
-2026-03-22 09:32:37,908 - root - INFO - Sub-wallet 9 created, address: 4qTgQ1bFsr3ujrpY6Kj1W12u5orisU6D5yp4QperMNku
-2026-03-22 09:32:37,911 - root - INFO - Created wallet with address: 3QA7NF4JvFWRUK6GB141bLvpkFY6TmgTVENtVAHYLn2c generated
-2026-03-22 09:32:37,912 - root - INFO - Sub-wallet 10 created, address: 3QA7NF4JvFWRUK6GB141bLvpkFY6TmgTVENtVAHYLn2c
-2026-03-22 09:32:37,915 - root - INFO - Created wallet with address: 5JK72xQ68tJkXPRUq5ghLw25EFT2AbWR3dCyy5DB1uMC generated
-2026-03-22 09:32:37,915 - root - INFO - Sub-wallet 11 created, address: 5JK72xQ68tJkXPRUq5ghLw25EFT2AbWR3dCyy5DB1uMC
-2026-03-22 09:32:37,918 - root - INFO - Created wallet with address: 5PhXDZuwx9TVxX6vWYE3qg44rrVwP3SBF87CJWgW5F3y generated
-2026-03-22 09:32:37,918 - root - INFO - Sub-wallet 12 created, address: 5PhXDZuwx9TVxX6vWYE3qg44rrVwP3SBF87CJWgW5F3y
-2026-03-22 09:32:37,921 - root - INFO - Created wallet with address: C5qeGbQy2oH8sHYCh7xbUscLFVKSGjHRagrby8hMLVGv generated
-2026-03-22 09:32:37,921 - root - INFO - Sub-wallet 13 created, address: C5qeGbQy2oH8sHYCh7xbUscLFVKSGjHRagrby8hMLVGv
-2026-03-22 09:32:37,924 - root - INFO - Created wallet with address: 6hA88TLi9iaWRE8bgsw8grDdKBvmamCpCxs8hUzbmipy generated
-2026-03-22 09:32:37,925 - root - INFO - Sub-wallet 14 created, address: 6hA88TLi9iaWRE8bgsw8grDdKBvmamCpCxs8hUzbmipy
-2026-03-22 09:32:37,928 - root - INFO - Created wallet with address: 9J1jCgUD8cAdD9dadpUoUsygBoJEss7ddiCxhgCE1dj generated
-2026-03-22 09:32:37,928 - root - INFO - Sub-wallet 15 created, address: 9J1jCgUD8cAdD9dadpUoUsygBoJEss7ddiCxhgCE1dj
-2026-03-22 09:32:37,931 - root - INFO - Created wallet with address: 5bksE2NQr6n17Z3vh863Hb8L21Ei2ZficcS9A9Ygy9JW generated
-2026-03-22 09:32:37,931 - root - INFO - Sub-wallet 16 created, address: 5bksE2NQr6n17Z3vh863Hb8L21Ei2ZficcS9A9Ygy9JW
-2026-03-22 09:32:37,934 - root - INFO - Created wallet with address: DtkrrVq2mu7bnxSDTtWE7GyTLDUDiPJ1Kpzk3tqscYas generated
-2026-03-22 09:32:37,935 - root - INFO - Sub-wallet 17 created, address: DtkrrVq2mu7bnxSDTtWE7GyTLDUDiPJ1Kpzk3tqscYas
-2026-03-22 09:32:37,938 - root - INFO - Created wallet with address: 6FyPgX8VMNYakepkzbbrvDKgKdWtjr1Tp6ejeMvrpWkg generated
-2026-03-22 09:32:37,938 - root - INFO - Sub-wallet 18 created, address: 6FyPgX8VMNYakepkzbbrvDKgKdWtjr1Tp6ejeMvrpWkg
-2026-03-22 09:32:37,941 - root - INFO - Created wallet with address: 9RGe1GQbWjj3pZW6rKa6nFrjQGVS6xcHpf1m3TK6EXsv generated
-2026-03-22 09:32:37,941 - root - INFO - Sub-wallet 19 created, address: 9RGe1GQbWjj3pZW6rKa6nFrjQGVS6xcHpf1m3TK6EXsv
-2026-03-22 09:32:37,944 - root - INFO - Created wallet with address: AmUWtDsugHyC5gYpE49fY1sVMxxSee9raLam4EzXxT2a generated
-2026-03-22 09:32:37,945 - root - INFO - Sub-wallet 20 created, address: AmUWtDsugHyC5gYpE49fY1sVMxxSee9raLam4EzXxT2a
-2026-03-22 09:32:37,945 - app - INFO - LaunchManager initialized
-2026-03-22 09:32:37,964 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2026-03-23 10:00:49,383 - root - INFO - Created wallet with address: HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk from mnemonic
+2026-03-23 10:00:49,483 - root - INFO - Launch Manager Initialized, main wallet address: HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk
+2026-03-23 10:00:49,488 - root - INFO - Created wallet with address: Ey6KUqe2L3Au5tiCSZYDvrVjsBheZHex1DSQ3jJQUX1K generated
+2026-03-23 10:00:49,489 - root - INFO - Sub-wallet 1 created, address: Ey6KUqe2L3Au5tiCSZYDvrVjsBheZHex1DSQ3jJQUX1K
+2026-03-23 10:00:49,492 - root - INFO - Created wallet with address: sSsFqtDx75sCuYuK5Q9h5PvbiESSJaVvnhm5pzGSjHa generated
+2026-03-23 10:00:49,492 - root - INFO - Sub-wallet 2 created, address: sSsFqtDx75sCuYuK5Q9h5PvbiESSJaVvnhm5pzGSjHa
+2026-03-23 10:00:49,496 - root - INFO - Created wallet with address: GLVHozHLd8UnVx4b8ke122CQWbGouQafsrZN78JVLTeV generated
+2026-03-23 10:00:49,496 - root - INFO - Sub-wallet 3 created, address: GLVHozHLd8UnVx4b8ke122CQWbGouQafsrZN78JVLTeV
+2026-03-23 10:00:49,500 - root - INFO - Created wallet with address: C6xFSkfyjE72z7TL5Kyhc1TCPfddkhVVfrYFTkHQhw64 generated
+2026-03-23 10:00:49,500 - root - INFO - Sub-wallet 4 created, address: C6xFSkfyjE72z7TL5Kyhc1TCPfddkhVVfrYFTkHQhw64
+2026-03-23 10:00:49,504 - root - INFO - Created wallet with address: HBPKiHDWSJxoP9Wix1s8c9XxoDLk66oUTVkegUcZq3od generated
+2026-03-23 10:00:49,504 - root - INFO - Sub-wallet 5 created, address: HBPKiHDWSJxoP9Wix1s8c9XxoDLk66oUTVkegUcZq3od
+2026-03-23 10:00:49,508 - root - INFO - Created wallet with address: 99LWnkzrNgcJXdYzYyubHTZDwCzKuEoCw9wXRDWsmMYq generated
+2026-03-23 10:00:49,508 - root - INFO - Sub-wallet 6 created, address: 99LWnkzrNgcJXdYzYyubHTZDwCzKuEoCw9wXRDWsmMYq
+2026-03-23 10:00:49,512 - root - INFO - Created wallet with address: 8B3zunuGZmxLaVKofF5Z6ZkvadqLbY77z9WWhfuG9BF4 generated
+2026-03-23 10:00:49,512 - root - INFO - Sub-wallet 7 created, address: 8B3zunuGZmxLaVKofF5Z6ZkvadqLbY77z9WWhfuG9BF4
+2026-03-23 10:00:49,515 - root - INFO - Created wallet with address: Baeiw8giVp5SRas6dhE4MXeZ476qwvMKvrS4KBxrLmE7 generated
+2026-03-23 10:00:49,516 - root - INFO - Sub-wallet 8 created, address: Baeiw8giVp5SRas6dhE4MXeZ476qwvMKvrS4KBxrLmE7
+2026-03-23 10:00:49,519 - root - INFO - Created wallet with address: H9taUsrUnJTHPHjwqCSAwVbTfycjv2UeexAnHJp8JXNg generated
+2026-03-23 10:00:49,519 - root - INFO - Sub-wallet 9 created, address: H9taUsrUnJTHPHjwqCSAwVbTfycjv2UeexAnHJp8JXNg
+2026-03-23 10:00:49,523 - root - INFO - Created wallet with address: 6JB4m9k9iXn3R8HxgeW6y1xtiyGJ6r4ghHncCCohmUxz generated
+2026-03-23 10:00:49,523 - root - INFO - Sub-wallet 10 created, address: 6JB4m9k9iXn3R8HxgeW6y1xtiyGJ6r4ghHncCCohmUxz
+2026-03-23 10:00:49,526 - root - INFO - Created wallet with address: 7XHTmmjNYiN1jxYkKeLoGvr5m9Pgeo5EMDjDVxhnQjZW generated
+2026-03-23 10:00:49,527 - root - INFO - Sub-wallet 11 created, address: 7XHTmmjNYiN1jxYkKeLoGvr5m9Pgeo5EMDjDVxhnQjZW
+2026-03-23 10:00:49,530 - root - INFO - Created wallet with address: FU1HRHAvqZw13FCpCF1VF2RtLF1kCZM7hbbg8F4qCZT8 generated
+2026-03-23 10:00:49,530 - root - INFO - Sub-wallet 12 created, address: FU1HRHAvqZw13FCpCF1VF2RtLF1kCZM7hbbg8F4qCZT8
+2026-03-23 10:00:49,534 - root - INFO - Created wallet with address: BHntRmSrm7hRRGLaRbFd2XmLd2n9Ba3KznfJS3mivk44 generated
+2026-03-23 10:00:49,534 - root - INFO - Sub-wallet 13 created, address: BHntRmSrm7hRRGLaRbFd2XmLd2n9Ba3KznfJS3mivk44
+2026-03-23 10:00:49,538 - root - INFO - Created wallet with address: 29fJYarjSMMMcD2YvqeWcAqjZ9eQ6MhYsQ1JiiybZGcM generated
+2026-03-23 10:00:49,538 - root - INFO - Sub-wallet 14 created, address: 29fJYarjSMMMcD2YvqeWcAqjZ9eQ6MhYsQ1JiiybZGcM
+2026-03-23 10:00:49,542 - root - INFO - Created wallet with address: 8koqFkDESKBB3gwyPFmKi6rhqER9cVyEwxmAAzsh1Wv7 generated
+2026-03-23 10:00:49,542 - root - INFO - Sub-wallet 15 created, address: 8koqFkDESKBB3gwyPFmKi6rhqER9cVyEwxmAAzsh1Wv7
+2026-03-23 10:00:49,546 - root - INFO - Created wallet with address: cEMKWRhHZFcH6pJfDT69ELmvHHzmNQEZ3vAG4CPNffR generated
+2026-03-23 10:00:49,546 - root - INFO - Sub-wallet 16 created, address: cEMKWRhHZFcH6pJfDT69ELmvHHzmNQEZ3vAG4CPNffR
+2026-03-23 10:00:49,550 - root - INFO - Created wallet with address: 3qKUCgi3tuj8n3ig2cdL9wQ8cvv5Svk4rceyPu2DjKF2 generated
+2026-03-23 10:00:49,550 - root - INFO - Sub-wallet 17 created, address: 3qKUCgi3tuj8n3ig2cdL9wQ8cvv5Svk4rceyPu2DjKF2
+2026-03-23 10:00:49,553 - root - INFO - Created wallet with address: DHTwqX9ZsPXWm9oZW4DEomE6jdVVcBeanLn3pCx98Z4k generated
+2026-03-23 10:00:49,554 - root - INFO - Sub-wallet 18 created, address: DHTwqX9ZsPXWm9oZW4DEomE6jdVVcBeanLn3pCx98Z4k
+2026-03-23 10:00:49,557 - root - INFO - Created wallet with address: 6SdLaC6gBJjgGS3MJGmUxmcvmfaVsetMhByNhM73iAgb generated
+2026-03-23 10:00:49,557 - root - INFO - Sub-wallet 19 created, address: 6SdLaC6gBJjgGS3MJGmUxmcvmfaVsetMhByNhM73iAgb
+2026-03-23 10:00:49,562 - root - INFO - Created wallet with address: 9VuWKmV7taCFNGKyxUtJPtSLFVNruM8Un1D1tUhrf4MV generated
+2026-03-23 10:00:49,562 - root - INFO - Sub-wallet 20 created, address: 9VuWKmV7taCFNGKyxUtJPtSLFVNruM8Un1D1tUhrf4MV
+2026-03-23 10:00:49,562 - __main__ - INFO - LaunchManager initialized
+2026-03-23 10:00:49,584 - werkzeug - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:5000
  * Running on http://192.168.0.2:5000
-2026-03-22 09:32:37,964 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
-2026-03-22 09:32:57,581 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET / HTTP/1.1" 200 -
-2026-03-22 09:32:57,612 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /assets/index-QKQF-67A.css HTTP/1.1" 200 -
-2026-03-22 09:32:57,614 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /assets/index-mwNnJ-ol.js HTTP/1.1" 200 -
-2026-03-22 09:32:57,849 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /api/status HTTP/1.1" 200 -
-2026-03-22 09:32:57,858 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /api/wallets HTTP/1.1" 200 -
-2026-03-22 09:32:57,860 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /api/tasks HTTP/1.1" 200 -
-2026-03-22 09:32:57,863 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:32:57] "GET /api/history HTTP/1.1" 200 -
-2026-03-22 09:33:02,865 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:33:02] "GET /api/status HTTP/1.1" 200 -
-2026-03-22 09:33:02,866 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:33:02] "GET /api/history HTTP/1.1" 200 -
-2026-03-22 09:33:02,870 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:33:02] "GET /api/wallets HTTP/1.1" 200 -
-2026-03-22 09:33:02,877 - werkzeug - INFO - 127.0.0.1 - - [22/Mar/2026 09:33:02] "GET /api/tasks HTTP/1.1" 200 -
+2026-03-23 10:00:49,584 - werkzeug - INFO - [33mPress CTRL+C to quit[0m
+2026-03-23 10:00:53,360 - werkzeug - INFO - 127.0.0.1 - - [23/Mar/2026 10:00:53] "GET /api/status HTTP/1.1" 200 -

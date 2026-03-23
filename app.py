@@ -392,7 +392,14 @@ def launch_bundle():
         # Run in background to avoid timeout
         def run_launch():
             try:
+                # Capture result which might contain signatures
                 run_async(bundle_launch(launch_manager, token, num_wallets, amounts, use_jito, dev_buy_amount))
+
+                # Sync balances after launch
+                run_async(launch_manager.main_wallet.update_balance(launch_manager.rpc_client))
+                for w in launch_manager.sub_wallets:
+                    run_async(w.update_balance(launch_manager.rpc_client))
+
                 # Save to history
                 h = load_history()
                 h['tokens'].append({
@@ -487,8 +494,14 @@ def sell_dump_all():
     data = request.json
     percentage = data.get('percentage', 100)
     try:
-        run_async(launch_manager.dump_all(percentage))
-        return jsonify({"status": "success"})
+        def run_dump():
+            run_async(launch_manager.dump_all(percentage))
+            run_async(launch_manager.main_wallet.update_balance(launch_manager.rpc_client))
+            for w in launch_manager.sub_wallets:
+                run_async(w.update_balance(launch_manager.rpc_client))
+
+        threading.Thread(target=run_dump).start()
+        return jsonify({"status": "initiated"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -573,8 +586,10 @@ HISTORY_FILE = 'history.json'
 def load_history():
     if os.path.exists(HISTORY_FILE):
         with open(HISTORY_FILE, 'r') as f:
-            return json.load(f)
-    return {"tokens": [], "performance": {"total_profit": 0, "launches": 0}}
+            data = json.load(f)
+            if 'signatures' not in data: data['signatures'] = []
+            return data
+    return {"tokens": [], "performance": {"total_profit": 0, "launches": 0}, "signatures": []}
 
 def save_history(history):
     with open(HISTORY_FILE, 'w') as f:
@@ -583,6 +598,17 @@ def save_history(history):
 @app.route('/api/history', methods=['GET'])
 def get_history():
     return jsonify(load_history())
+
+@app.route('/api/history/signature', methods=['POST'])
+def add_signature():
+    data = request.json
+    sig = data.get('signature')
+    desc = data.get('description')
+    h = load_history()
+    h['signatures'].insert(0, {"sig": sig, "desc": desc, "time": time.time()})
+    h['signatures'] = h['signatures'][:50] # Keep last 50
+    save_history(h)
+    return jsonify({"status": "success"})
 
 @app.route('/api/tasks', methods=['GET'])
 def get_tasks():

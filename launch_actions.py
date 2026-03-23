@@ -100,6 +100,11 @@ async def clone_and_snipe(launch_manager, token: Token, num_wallets: int, amount
             token.mint_address = str(mint_keypair.pubkey())
             logging.info(f"Token created: {token.mint_address} sig: {tx_sig}")
 
+            # Record signature
+            try:
+                requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": str(tx_sig), "description": f"Create {token_symbol}"})
+            except: pass
+
             sub_buy_txs = []
             signer_keypairs = []
             for i in range(min(num_wallets, len(launch_manager.sub_wallets))):
@@ -117,11 +122,16 @@ async def clone_and_snipe(launch_manager, token: Token, num_wallets: int, amount
                signer_keypairs.append(wallet.keypair)
 
             if use_jito:
-                await transaction.submit_jito_bundle(launch_manager.pumpfun_api_url, launch_manager.helius_api_key, sub_buy_txs, signer_keypairs, launch_manager.rpc_client)
+                sigs = await transaction.submit_jito_bundle(launch_manager.pumpfun_api_url, launch_manager.helius_api_key, sub_buy_txs, signer_keypairs, launch_manager.rpc_client)
+                for sig in sigs:
+                   try: requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": sig, "description": f"Bundle Buy {token_symbol}"})
+                   except: pass
             else:
                 for sub_tx, signer in zip(sub_buy_txs, signer_keypairs):
                     tx = await create_and_sign_local_tx(sub_tx, signer)
-                    await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                    sig = await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                    try: requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": str(sig), "description": f"Snipe Buy {token_symbol}"})
+                    except: pass
     except Exception as e:
         logging.error(f"Error in clone_and_snipe: {e}")
         raise
@@ -218,8 +228,11 @@ async def bundle_launch(launch_manager, token: Token, num_wallets: int, amounts:
         }
 
         tx = await create_and_sign_local_tx(create_tx_data, launch_manager.main_wallet.keypair, mint_keypair)
-        await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+        tx_sig = await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
         token.mint_address = str(mint_keypair.pubkey())
+
+        try: requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": str(tx_sig), "description": f"Create {token.symbol}"})
+        except: pass
 
         sub_buy_txs = []
         signer_keypairs = []
@@ -238,11 +251,16 @@ async def bundle_launch(launch_manager, token: Token, num_wallets: int, amounts:
             signer_keypairs.append(wallet.keypair)
 
         if use_jito:
-            await transaction.submit_jito_bundle(launch_manager.pumpfun_api_url, launch_manager.helius_api_key, sub_buy_txs, signer_keypairs, launch_manager.rpc_client)
+            sigs = await transaction.submit_jito_bundle(launch_manager.pumpfun_api_url, launch_manager.helius_api_key, sub_buy_txs, signer_keypairs, launch_manager.rpc_client)
+            for sig in sigs:
+                try: requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": sig, "description": f"Bundle Buy {token.symbol}"})
+                except: pass
         else:
              for sub_tx, signer in zip(sub_buy_txs, signer_keypairs):
                 tx = await create_and_sign_local_tx(sub_tx, signer)
-                await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                sig = await transaction.send_helius_transaction(launch_manager.helius_api_key, tx)
+                try: requests.post("http://127.0.0.1:5000/api/history/signature", json={"signature": str(sig), "description": f"Snipe Buy {token.symbol}"})
+                except: pass
     except Exception as e:
         logging.error(f"Error in bundle_launch: {e}")
         raise
