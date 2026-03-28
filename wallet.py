@@ -106,9 +106,8 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], funder_keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[funder_keypair])
-            transaction_obj.sign([funder_keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([funder_keypair], recent_blockhash=recent_blockhash)
 
             signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f'Wallet {self.address} funded with {sol_amount} SOL via Helius, txid: {signature}')
@@ -165,11 +164,10 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], self.keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-            signature = await transaction.send_helius_transaction(helius_api_key, bytes(transaction_obj))
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(
                 f'Sent {transferable_lamports / 1_000_000_000} SOL from wallet {self.address} to {to_wallet_address}. txid: {signature}')
         except Exception as e:
@@ -219,11 +217,10 @@ class Wallet:
             message = Message.new_with_blockhash(
                 [transfer_instruction], self.keypair.pubkey(), recent_blockhash
             )
-            # Corrected: Passing recent_blockhash to constructor AND sign method
             transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # ADDED recent_blockhash HERE
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-            signature = await transaction.send_helius_transaction(helius_api_key, bytes(transaction_obj))
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f"SOL reclaimed from wallet {self.address} to {to_wallet_address} via Helius, txid: {signature}")
         except Exception as e:
             logging.error(f"Error reclaiming SOL from wallet {self.address}: {e}")
@@ -257,10 +254,10 @@ class Wallet:
                 )
             )
             message = Message([transfer_instruction], recent_blockhash=recent_blockhash)
-            transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair]) # Corrected: recent_blockhash in constructor
-            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash) # Corrected: recent_blockhash in sign
+            transaction_obj = Transaction(message=message, recent_blockhash=recent_blockhash, from_keypairs=[self.keypair])
+            transaction_obj.sign([self.keypair], recent_blockhash=recent_blockhash)
 
-            signature = await transaction.send_helius_transaction(helius_api_key, bytes(transaction_obj))
+            signature = await transaction.send_helius_transaction(helius_api_key, transaction_obj)
             logging.info(f"Sent tokens from wallet {self.address} to dev wallet {to_wallet_address}")
         except Exception as e:
             logging.error(f"Error transferring tokens: {e}")
@@ -373,12 +370,13 @@ async def _save_wallets(output_folder, main_wallet, sub_wallets):
 
 
 class Token:
-    def __init__(self, name: str, symbol: str, image_path: Optional[str] = None, description: Optional[str] = None, telegram: Optional[str] = None, website: Optional[str] = None):
+    def __init__(self, name: str, symbol: str, image_path: Optional[str] = None, description: Optional[str] = None, telegram: Optional[str] = None, twitter: Optional[str] = None, website: Optional[str] = None):
         self.name: str = name
         self.symbol: str = symbol
         self.image_path: Optional[str] = image_path
         self.description: Optional[str] = description
         self.telegram: Optional[str] = telegram
+        self.twitter: Optional[str] = twitter
         self.website: Optional[str] = website
         self.metadata: Optional[Dict] = None
         self.mint_address: Optional[str] = None

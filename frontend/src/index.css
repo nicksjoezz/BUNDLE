@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-hacker-dark text-hacker-green font-mono overflow-x-hidden;
+  }
+}
+
+.hacker-border {
+  @apply border border-hacker-green shadow-[0_0_10px_rgba(0,255,65,0.3)];
+}
+
+.hacker-bg {
+  @apply bg-black bg-opacity-90 backdrop-blur-md;
+}
+
+.glitch {
+  position: relative;
+}
+
+.glitch::before,
+.glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.8;
+}
+
+.glitch::before {
+  color: #ff00c1;
+  z-index: -1;
+  animation: glitch-anim 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+}
+
+.glitch::after {
+  color: #00fff9;
+  z-index: -2;
+  animation: glitch-anim 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+}
+
+@keyframes glitch-anim {
+  0% { transform: translate(0); }
+  20% { transform: translate(-2px, 2px); }
+  40% { transform: translate(-2px, -2px); }
+  60% { transform: translate(2px, 2px); }
+  80% { transform: translate(2px, -2px); }
+  100% { transform: translate(0); }
+}
+
+.scanline {
+  width: 100%;
+  height: 2px;
+  background: rgba(0, 255, 65, 0.1);
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+  animation: scanline 6s linear infinite;
+}
+
+@keyframes scanline {
+  0% { top: -2%; }
+  100% { top: 100%; }
+}
+
+.btn-hacker {
+  @apply px-4 py-2 border border-hacker-green hover:bg-hacker-green hover:text-black transition-all duration-300 active:scale-95 disabled:opacity-50;
+}
+
+.input-hacker {
+  @apply bg-black border border-hacker-muted focus:border-hacker-green outline-none px-3 py-2 text-hacker-green;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-hacker-dark;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-hacker-muted hover:bg-hacker-green;
+}

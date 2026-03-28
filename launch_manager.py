@@ -64,7 +64,6 @@ class LaunchManager:
         self.stagger_default_priority_fee: float = 0.0001
 
         self.default_pool: str = "pump" # ADDED
-        self.pumpfun_api = None
 
     async def init(self):
         try:
@@ -596,7 +595,6 @@ class LaunchManager:
             if self.rpc_client:
                 await self.rpc_client.close()
             await self.close_websocket()
-            # Removed pumpfun_api close
         except Exception as e:
             logging.error(f"Error during close: {e}")
             raise
